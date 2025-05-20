@@ -16,6 +16,9 @@ public class GameServer {
             GameConstants.log("Server started on " + getServerInfo());
             GameConstants.log("Waiting for clients...");
 
+            gameState.spawnCollectible();
+            gameState.spawnCollectible();
+
             while (true) {
                 byte[] buffer = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);

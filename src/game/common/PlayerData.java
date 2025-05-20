@@ -4,6 +4,7 @@ public class PlayerData {
     public final int id;
     public int x;
     public int y;
+    public int score = 0;
 
     public PlayerData(int id, int x, int y) {
         this.id = id;
@@ -13,6 +14,6 @@ public class PlayerData {
 
     @Override
     public String toString() {
-        return String.format("%d,%d,%d", id, x, y);
+        return id + "," + x + "," + y + "," + score;
     }
 }

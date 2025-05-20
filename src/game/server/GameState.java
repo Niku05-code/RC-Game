@@ -10,6 +10,8 @@ public class GameState {
     private final ConcurrentMap<String, PlayerData> players = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ClientInfo> clients = new ConcurrentHashMap<>();
     private final AtomicInteger nextPlayerId = new AtomicInteger(1);
+    private final List<Collectible> collectibles = new ArrayList<>();
+    private final AtomicInteger nextCollectibleId = new AtomicInteger(1);
 
     private String key(InetAddress address, int port) {
         return address.getHostAddress() + ":" + port;
@@ -38,14 +40,40 @@ public class GameState {
     public synchronized String getGameState() {
         StringBuilder sb = new StringBuilder();
         for (PlayerData player : players.values()) {
-            if (sb.length() > 0) sb.append(" ");
-            sb.append(player);
+            sb.append("P:").append(player).append(";");
+        }
+        for (Collectible c : collectibles) {
+            sb.append("C:").append(c).append(";");
         }
         return sb.toString();
     }
 
     public synchronized Collection<ClientInfo> getAllClients() {
         return new ArrayList<>(clients.values());
+    }
+
+    public synchronized void spawnCollectible() {
+        Random rand = new Random();
+        int x = rand.nextInt(GameConstants.GAME_WIDTH - GameConstants.PLAYER_SIZE);
+        int y = rand.nextInt(GameConstants.GAME_HEIGHT - GameConstants.PLAYER_SIZE);
+        collectibles.add(new Collectible(nextCollectibleId.getAndIncrement(), x, y));
+    }
+
+    public synchronized void checkCollectibles(InetAddress address, int port) {
+        String clientKey = key(address, port);
+        PlayerData player = players.get(clientKey);
+        if (player == null) return;
+
+        Iterator<Collectible> iter = collectibles.iterator();
+        while (iter.hasNext()) {
+            Collectible c = iter.next();
+            if (c.intersects(player)) {
+                player.score += 1;
+                iter.remove();
+                spawnCollectible();
+                GameConstants.log("Player " + player.id + " collected object " + c.id);
+            }
+        }
     }
 
     public synchronized int getPlayerCount() {

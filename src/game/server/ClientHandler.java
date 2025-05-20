@@ -48,6 +48,10 @@ public class ClientHandler {
             int x = Integer.parseInt(parts[1]);
             int y = Integer.parseInt(parts[2]);
             gameState.updatePlayerPosition(clientAddress, clientPort, x, y);
+
+            // Verifică dacă a colectat ceva
+            gameState.checkCollectibles(clientAddress, clientPort);
+
             gameState.broadcastGameState(socket);
         }
     }
