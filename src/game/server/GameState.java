@@ -33,7 +33,6 @@ public class GameState {
         if (player != null) {
             player.x = x;
             player.y = y;
-            GameConstants.log("Updated player " + player.id + " position to (" + x + "," + y + ")");
         }
     }
 
@@ -86,7 +85,6 @@ public class GameState {
         for (ClientInfo client : getAllClients()) {
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, client.address, client.port);
             socket.send(packet);
-            GameConstants.log("Broadcasted to " + client.address + ":" + client.port + " -> " + state);
         }
     }
 

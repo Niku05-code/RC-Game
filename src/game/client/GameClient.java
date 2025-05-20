@@ -17,7 +17,7 @@ public class GameClient {
 
         client.start();
 
-        JFrame frame = new JFrame("Multiplayer Game Client");
+        JFrame frame = new JFrame("Multiplayer Game");
         frame.setContentPane(panel);
         frame.setSize(GameConstants.GAME_WIDTH, GameConstants.GAME_HEIGHT);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
