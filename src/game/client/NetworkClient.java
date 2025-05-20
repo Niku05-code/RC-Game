@@ -2,6 +2,7 @@ package game.client;
 
 import game.common.*;
 
+import javax.swing.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,17 +62,25 @@ public class NetworkClient {
     }
 
     private void handleMessage(String message) {
-        if (message.startsWith(GameConstants.CMD_WELCOME)) {
-            String[] parts = message.split(" ");
-            if (parts.length == 2) {
-                int id = Integer.parseInt(parts[1]);
-                gamePanel.setPlayerId(id);
+        System.out.println("Received: " + message); // Debug
+
+        SwingUtilities.invokeLater(() -> {
+            if (message.startsWith(GameConstants.CMD_WELCOME)) {
+                String[] parts = message.split(" ");
+                if (parts.length == 2) {
+                    int id = Integer.parseInt(parts[1]);
+                    System.out.println("Setting player ID: " + id);
+                    gamePanel.setPlayerId(id);
+                }
             }
-        } else if (message.startsWith(GameConstants.CMD_STATE)) {
-            String state = message.substring(GameConstants.CMD_STATE.length()).trim();
-            gamePanel.updateGameState(state);
-        } else if (message.startsWith(GameConstants.CMD_FULL)) {
-            GameConstants.log("Server is full.");
-        }
+            else if (message.startsWith(GameConstants.CMD_STATE)) {
+                System.out.println("Updating game state");
+                String state = message.substring(GameConstants.CMD_STATE.length()).trim();
+                gamePanel.updateGameState(state);
+            }
+            else if (message.startsWith(GameConstants.CMD_FULL)) {
+                JOptionPane.showMessageDialog(null, "Server is full!");
+            }
+        });
     }
 }

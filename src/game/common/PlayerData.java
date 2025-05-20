@@ -12,6 +12,13 @@ public class PlayerData {
         this.y = y;
     }
 
+    public PlayerData(int id, int x, int y, int score) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.score = score;
+    }
+
     @Override
     public String toString() {
         return id + "," + x + "," + y + "," + score;

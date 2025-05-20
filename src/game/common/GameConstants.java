@@ -5,8 +5,9 @@ public class GameConstants {
     public static final int MAX_PLAYERS = 4;
     public static final int GAME_WIDTH = 800;
     public static final int GAME_HEIGHT = 600;
-    public static final int PLAYER_SIZE = 100;
+    public static final int PLAYER_SIZE = 40;
     public static final int MOVE_SPEED = 5;
+    public static final int COLLECTIBLE_SIZE = 20;
     public static final String CMD_CONNECT = "CONNECT";
     public static final String CMD_MOVE = "MOVE";
     public static final String CMD_WELCOME = "WELCOME";
