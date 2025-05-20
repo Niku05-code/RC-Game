@@ -8,19 +8,22 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 import javax.swing.Timer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GamePanel extends JPanel implements KeyListener {
-    private final Map<Integer, PlayerData> players = new HashMap<>();
+    private final Map<Integer, PlayerData> players = new ConcurrentHashMap<>();
     private int playerId;
     private NetworkClient networkClient;
-
-    private final List<Collectible> collectibles = new ArrayList<>();
+    private final List<Collectible> collectibles = new CopyOnWriteArrayList<>();
+    private final Set<Integer> pressedKeys = new HashSet<>();
 
     public GamePanel() {
         setFocusable(true);
         addKeyListener(this);
         Timer timer = new Timer(1000 / 30, e -> repaint());
         timer.start();
+        new Timer(15, e -> updatePlayerPosition()).start();
     }
 
     public void setNetworkClient(NetworkClient client) {
@@ -87,24 +90,41 @@ public class GamePanel extends JPanel implements KeyListener {
         }
     }
 
-    @Override
-    public void keyPressed(KeyEvent e) {
+    private void updatePlayerPosition() {
         PlayerData self = players.get(playerId);
         if (self == null) return;
 
-        int step = 5;
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_LEFT: self.x -= step; break;
-            case KeyEvent.VK_RIGHT: self.x += step; break;
-            case KeyEvent.VK_UP: self.y -= step; break;
-            case KeyEvent.VK_DOWN: self.y += step; break;
+        int dx = 0;
+        int dy = 0;
+
+        if (pressedKeys.contains(KeyEvent.VK_LEFT)) dx -= GameConstants.MOVE_SPEED;
+        if (pressedKeys.contains(KeyEvent.VK_RIGHT)) dx += GameConstants.MOVE_SPEED;
+        if (pressedKeys.contains(KeyEvent.VK_UP)) dy -= GameConstants.MOVE_SPEED;
+        if (pressedKeys.contains(KeyEvent.VK_DOWN)) dy += GameConstants.MOVE_SPEED;
+
+        if (dx != 0 && dy != 0) {
+            dx = (int) (dx / Math.sqrt(2));
+            dy = (int) (dy / Math.sqrt(2));
         }
 
-        if (networkClient != null) {
-            networkClient.sendMove(self.x, self.y);
+        if (dx != 0 || dy != 0) {
+            self.x += dx;
+            self.y += dy;
+
+            if (networkClient != null) {
+                networkClient.sendMove(self.x, self.y);
+            }
         }
     }
 
-    public void keyReleased(KeyEvent e) {}
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        pressedKeys.add(e.getKeyCode());
+    }
+
+    public void keyReleased(KeyEvent e) {
+        pressedKeys.remove(e.getKeyCode());
+    }
     public void keyTyped(KeyEvent e) {}
 }
