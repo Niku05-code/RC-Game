@@ -7,23 +7,31 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GameState {
-    private final ConcurrentMap<InetAddress, PlayerData> players = new ConcurrentHashMap<>();
-    private final ConcurrentMap<InetAddress, ClientInfo> clients = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, PlayerData> players = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ClientInfo> clients = new ConcurrentHashMap<>();
     private final AtomicInteger nextPlayerId = new AtomicInteger(1);
 
-    public synchronized PlayerData addPlayer(InetAddress address, int clientPort) {
+    private String key(InetAddress address, int port) {
+        return address.getHostAddress() + ":" + port;
+    }
+
+    public synchronized PlayerData addPlayer(InetAddress address, int port) {
+        String clientKey = key(address, port);
         int id = nextPlayerId.getAndIncrement();
         PlayerData player = new PlayerData(id, GameConstants.GAME_WIDTH / 2, GameConstants.GAME_HEIGHT / 2);
-        players.put(address, player);
-        clients.put(address, new ClientInfo(address, clientPort));
+        players.put(clientKey, player);
+        clients.put(clientKey, new ClientInfo(address, port));
+        GameConstants.log("Added player " + id + " from " + clientKey);
         return player;
     }
 
-    public synchronized void updatePlayerPosition(InetAddress address, int x, int y) {
-        PlayerData player = players.get(address);
+    public synchronized void updatePlayerPosition(InetAddress address, int port, int x, int y) {
+        String clientKey = key(address, port);
+        PlayerData player = players.get(clientKey);
         if (player != null) {
             player.x = x;
             player.y = y;
+            GameConstants.log("Updated player " + player.id + " position to (" + x + "," + y + ")");
         }
     }
 
@@ -50,6 +58,7 @@ public class GameState {
         for (ClientInfo client : getAllClients()) {
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, client.address, client.port);
             socket.send(packet);
+            GameConstants.log("Broadcasted to " + client.address + ":" + client.port + " -> " + state);
         }
     }
 

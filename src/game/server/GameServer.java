@@ -4,7 +4,6 @@ import game.common.*;
 import java.net.*;
 
 public class GameServer {
-    private DatagramSocket socket;
     private final GameState gameState = new GameState();
 
     public static void main(String[] args) {
@@ -13,7 +12,7 @@ public class GameServer {
 
     public void start() {
         try {
-            socket = new DatagramSocket(GameConstants.SERVER_PORT);
+            DatagramSocket socket = new DatagramSocket(GameConstants.SERVER_PORT);
             GameConstants.log("Server started on " + getServerInfo());
             GameConstants.log("Waiting for clients...");
 

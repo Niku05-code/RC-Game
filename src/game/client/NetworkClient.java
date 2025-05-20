@@ -1,92 +1,77 @@
 package game.client;
 
 import game.common.*;
-import javax.swing.*;
+
 import java.net.*;
-import java.util.concurrent.*;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NetworkClient {
-    private DatagramSocket socket;
-    private final String serverAddress;
-    private GamePanel gamePanel;
-    private volatile boolean running;
+    private final DatagramSocket socket;
+    private final InetAddress serverAddress;
+    private final int serverPort;
+    private final GamePanel gamePanel;
+    private final AtomicBoolean running = new AtomicBoolean(true);
 
-    public NetworkClient(String serverAddress) {
-        this.serverAddress = serverAddress;
+    public NetworkClient(String serverIp, int serverPort, GamePanel panel) throws Exception {
+        this.serverAddress = InetAddress.getByName(serverIp);
+        this.serverPort = serverPort;
+        this.gamePanel = panel;
+        this.socket = new DatagramSocket();
+        GameConstants.log("NetworkClient created for server: " + serverIp);
     }
 
     public void start() {
         try {
-            socket = new DatagramSocket();
-            socket.setSoTimeout(3000);
-            running = true;
-            sendMessage(GameConstants.CMD_CONNECT);
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(this::receiveLoop);
-        } catch (Exception e) {
-            showError("Client start failed: " + e.getMessage());
-        }
-    }
+            send(GameConstants.CMD_CONNECT);
 
-    private void receiveLoop() {
-        while (running) {
-            try {
+            Thread listener = new Thread(() -> {
                 byte[] buffer = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                socket.receive(packet);
-                String msg = new String(packet.getData(), 0, packet.getLength()).trim();
-                processMessage(msg);
-            } catch (SocketTimeoutException ignored) {} catch (Exception e) {
-                stop();
-            }
+                while (running.get()) {
+                    try {
+                        socket.receive(packet);
+                        String message = new String(packet.getData(), 0, packet.getLength()).trim();
+                        handleMessage(message);
+                    } catch (Exception e) {
+                        GameConstants.log("Receive error: " + e.getMessage());
+                    }
+                }
+            });
+            listener.setDaemon(true);
+            listener.start();
+        } catch (Exception e) {
+            GameConstants.log("Start error: " + e.getMessage());
         }
     }
 
-    private void processMessage(String message) {
-        SwingUtilities.invokeLater(() -> {
-            if (message.startsWith(GameConstants.CMD_WELCOME)) {
-                int id = Integer.parseInt(message.split(" ")[1]);
-                gamePanel.setPlayerId(id);
-            } else if (message.startsWith(GameConstants.CMD_STATE)) {
-                String stateData = message.substring(GameConstants.CMD_STATE.length()).trim();
-                gamePanel.updateGameState(PlayerData.parseList(stateData));
-            } else if (message.equals(GameConstants.CMD_FULL)) {
-                showError("Server is full");
-                System.exit(0);
-            }
-        });
+    public void sendMove(int x, int y) {
+        send(GameConstants.CMD_MOVE + " " + x + " " + y);
     }
 
-    private void sendMessage(String message) {
+    private void send(String message) {
         try {
-            byte[] buffer = message.getBytes();
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length,
-                    InetAddress.getByName(serverAddress), GameConstants.SERVER_PORT);
+            byte[] buffer = message.getBytes(StandardCharsets.UTF_8);
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, serverAddress, serverPort);
             socket.send(packet);
+            GameConstants.log("Sent: " + message);
         } catch (Exception e) {
             GameConstants.log("Send error: " + e.getMessage());
         }
     }
 
-    private void showError(String message) {
-        javax.swing.JOptionPane.showMessageDialog(
-                null,
-                message,
-                "Eroare",
-                javax.swing.JOptionPane.ERROR_MESSAGE
-        );
-    }
-
-    public void sendMove(int x, int y) {
-        sendMessage(GameConstants.CMD_MOVE + " " + x + " " + y);
-    }
-
-    public void stop() {
-        running = false;
-        if (socket != null) socket.close();
-    }
-
-    public void setGamePanel(GamePanel panel) {
-        this.gamePanel = panel;
+    private void handleMessage(String message) {
+        if (message.startsWith(GameConstants.CMD_WELCOME)) {
+            String[] parts = message.split(" ");
+            if (parts.length == 2) {
+                int id = Integer.parseInt(parts[1]);
+                gamePanel.setPlayerId(id);
+            }
+        } else if (message.startsWith(GameConstants.CMD_STATE)) {
+            String state = message.substring(GameConstants.CMD_STATE.length()).trim();
+            gamePanel.updateGameState(state);
+        } else if (message.startsWith(GameConstants.CMD_FULL)) {
+            GameConstants.log("Server is full.");
+        }
     }
 }

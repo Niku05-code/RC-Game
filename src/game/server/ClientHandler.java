@@ -24,7 +24,7 @@ public class ClientHandler {
             if (message.startsWith(GameConstants.CMD_CONNECT)) {
                 handleConnect(clientAddress, clientPort);
             } else if (message.startsWith(GameConstants.CMD_MOVE)) {
-                handleMove(message, clientAddress);
+                handleMove(message, clientAddress, clientPort);
             }
         } catch (Exception e) {
             GameConstants.log("Error handling client: " + e.getMessage());
@@ -42,12 +42,12 @@ public class ClientHandler {
         gameState.broadcastGameState(socket);
     }
 
-    private void handleMove(String message, InetAddress clientAddress) throws Exception {
+    private void handleMove(String message, InetAddress clientAddress, int clientPort) throws Exception {
         String[] parts = message.split(" ");
         if (parts.length == 3) {
             int x = Integer.parseInt(parts[1]);
             int y = Integer.parseInt(parts[2]);
-            gameState.updatePlayerPosition(clientAddress, x, y);
+            gameState.updatePlayerPosition(clientAddress, clientPort, x, y);
             gameState.broadcastGameState(socket);
         }
     }

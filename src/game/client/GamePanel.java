@@ -1,97 +1,73 @@
 package game.client;
 
 import game.common.*;
+
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.Timer;
 
-
-public class GamePanel extends JPanel {
-    private int playerId = -1;
-    private List<PlayerData> players;
+public class GamePanel extends JPanel implements KeyListener {
+    private final Map<Integer, PlayerData> players = new HashMap<>();
+    private int playerId;
     private NetworkClient networkClient;
 
-
     public GamePanel() {
-        setPreferredSize(new Dimension(
-                GameConstants.GAME_WIDTH,
-                GameConstants.GAME_HEIGHT
-        ));
-        setBackground(Color.WHITE);
         setFocusable(true);
-        requestFocusInWindow();
-
-        addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (playerId == -1) return; // not connected yet
-
-                PlayerData me = players.stream()
-                        .filter(p -> p.id == playerId)
-                        .findFirst()
-                        .orElse(null);
-
-                if (me == null) return;
-
-                int step = 10;
-                int x = me.x;
-                int y = me.y;
-
-                switch (e.getKeyCode()) {
-                    case KeyEvent.VK_LEFT:
-                        x -= step;
-                        break;
-                    case KeyEvent.VK_RIGHT:
-                        x += step;
-                        break;
-                    case KeyEvent.VK_UP:
-                        y -= step;
-                        break;
-                    case KeyEvent.VK_DOWN:
-                        y += step;
-                        break;
-                }
-
-
-                if (networkClient != null) {
-                    networkClient.sendMove(x, y);
-                }
-            }
-        });
-
-        GameConstants.log("GamePanel initialized");
+        addKeyListener(this);
+        Timer timer = new Timer(1000 / 30, e -> repaint());
+        timer.start();
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
-
-        if (players != null) {
-            for (PlayerData player : players) {
-                g2d.setColor(player.id == playerId ? Color.BLUE : Color.RED);
-                g2d.fillOval(player.x - 15, player.y - 15, 30, 30);
-                g2d.setColor(Color.WHITE);
-                g2d.drawString(String.valueOf(player.id), player.x - 5, player.y + 5);
-            }
-        } else {
-            g2d.setColor(Color.BLACK);
-            g2d.drawString("Connecting to server...", 20, 20);
-        }
-    }
-
-    public void updateGameState(List<PlayerData> players) {
-        this.players = players;
-        repaint();
+    public void setNetworkClient(NetworkClient client) {
+        this.networkClient = client;
     }
 
     public void setPlayerId(int id) {
         this.playerId = id;
     }
 
-    public void setNetworkClient(NetworkClient networkClient) {
-        this.networkClient = networkClient;
+    public void updateGameState(String state) {
+        players.clear();
+        String[] tokens = state.split(" ");
+        for (String token : tokens) {
+            String[] parts = token.split(",");
+            int id = Integer.parseInt(parts[0]);
+            int x = Integer.parseInt(parts[1]);
+            int y = Integer.parseInt(parts[2]);
+            players.put(id, new PlayerData(id, x, y));
+        }
     }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        setBackground(Color.WHITE);
+        for (PlayerData p : players.values()) {
+            g.setColor(p.id == playerId ? Color.BLUE : Color.RED);
+            g.fillOval(p.x, p.y, GameConstants.PLAYER_SIZE, GameConstants.PLAYER_SIZE);
+        }
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        PlayerData self = players.get(playerId);
+        if (self == null) return;
+
+        int step = 5;
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_LEFT: self.x -= step; break;
+            case KeyEvent.VK_RIGHT: self.x += step; break;
+            case KeyEvent.VK_UP: self.y -= step; break;
+            case KeyEvent.VK_DOWN: self.y += step; break;
+        }
+
+        if (networkClient != null) {
+            networkClient.sendMove(self.x, self.y);
+        }
+    }
+
+    public void keyReleased(KeyEvent e) {}
+    public void keyTyped(KeyEvent e) {}
 }
