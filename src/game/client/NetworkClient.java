@@ -1,7 +1,6 @@
 package game.client;
 
 import game.common.*;
-
 import javax.swing.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +24,6 @@ public class NetworkClient {
     public void start() {
         try {
             send(GameConstants.CMD_CONNECT);
-
             Thread listener = new Thread(() -> {
                 byte[] buffer = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
@@ -34,8 +32,12 @@ public class NetworkClient {
                         socket.receive(packet);
                         String message = new String(packet.getData(), 0, packet.getLength()).trim();
                         handleMessage(message);
+                    } catch (SocketTimeoutException ste) {
                     } catch (Exception e) {
-                        GameConstants.log("Receive error: " + e.getMessage());
+                        if (running.get()) {
+                            GameConstants.log("Receive error: " + e.getMessage());
+                            e.printStackTrace();
+                        }
                     }
                 }
             });
@@ -50,37 +52,42 @@ public class NetworkClient {
         send(GameConstants.CMD_MOVE + " " + x + " " + y);
     }
 
+    public void sendStartGame() {
+        send(GameConstants.CMD_START_GAME);
+    }
+
     private void send(String message) {
         try {
             byte[] buffer = message.getBytes(StandardCharsets.UTF_8);
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, serverAddress, serverPort);
             socket.send(packet);
-            GameConstants.log("Sent: " + message);
         } catch (Exception e) {
             GameConstants.log("Send error: " + e.getMessage());
         }
     }
 
     private void handleMessage(String message) {
-        System.out.println("Received: " + message); // Debug
-
         SwingUtilities.invokeLater(() -> {
             if (message.startsWith(GameConstants.CMD_WELCOME)) {
                 String[] parts = message.split(" ");
                 if (parts.length == 2) {
                     int id = Integer.parseInt(parts[1]);
-                    System.out.println("Setting player ID: " + id);
                     gamePanel.setPlayerId(id);
                 }
-            }
-            else if (message.startsWith(GameConstants.CMD_STATE)) {
-                System.out.println("Updating game state");
+            } else if (message.startsWith(GameConstants.CMD_STATE)) {
                 String state = message.substring(GameConstants.CMD_STATE.length()).trim();
                 gamePanel.updateGameState(state);
-            }
-            else if (message.startsWith(GameConstants.CMD_FULL)) {
+            } else if (message.startsWith(GameConstants.CMD_FULL)) {
                 JOptionPane.showMessageDialog(null, "Server is full!");
             }
         });
+    }
+
+    public void stop() {
+        running.set(false);
+        if (socket != null && !socket.isClosed()) {
+            socket.close();
+            GameConstants.log("NetworkClient stopped.");
+        }
     }
 }

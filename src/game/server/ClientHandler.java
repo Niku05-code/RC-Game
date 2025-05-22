@@ -21,13 +21,24 @@ public class ClientHandler {
             InetAddress clientAddress = packet.getAddress();
             int clientPort = packet.getPort();
 
+            GameConstants.log("Received from " + clientAddress + ":" + clientPort + " -> " + message);
+
             if (message.startsWith(GameConstants.CMD_CONNECT)) {
                 handleConnect(clientAddress, clientPort);
             } else if (message.startsWith(GameConstants.CMD_MOVE)) {
-                handleMove(message, clientAddress, clientPort);
+                if (gameState.getGameState() == GameConstants.STATE_IN_GAME) {
+                    handleMove(message, clientAddress, clientPort);
+                } else {
+                    GameConstants.log("Move command ignored: Game not in progress.");
+                }
+            } else if (message.startsWith(GameConstants.CMD_START_GAME)) {
+                handleStartGame(clientAddress, clientPort);
             }
+            gameState.broadcastGameState(socket);
+
         } catch (Exception e) {
             GameConstants.log("Error handling client: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -36,22 +47,35 @@ public class ClientHandler {
             sendResponse(GameConstants.CMD_FULL, clientAddress, clientPort);
             return;
         }
-
         PlayerData player = gameState.addPlayer(clientAddress, clientPort);
         sendResponse(GameConstants.CMD_WELCOME + " " + player.id, clientAddress, clientPort);
-        gameState.broadcastGameState(socket);
     }
 
-    private void handleMove(String message, InetAddress clientAddress, int clientPort) throws Exception {
+    private void handleMove(String message, InetAddress clientAddress, int clientPort) {
         String[] parts = message.split(" ");
         if (parts.length == 3) {
             int x = Integer.parseInt(parts[1]);
             int y = Integer.parseInt(parts[2]);
             gameState.updatePlayerPosition(clientAddress, clientPort, x, y);
-
             gameState.checkCollectibles(clientAddress, clientPort);
+        }
+    }
 
-            gameState.broadcastGameState(socket);
+    private void handleStartGame(InetAddress clientAddress, int clientPort) throws Exception {
+        if (gameState.getGameState() == GameConstants.STATE_GAME_OVER) {
+            gameState.resetGame();
+            GameConstants.log("Game reset requested by " + clientAddress + ":" + clientPort);
+            gameState.startGameCountdown();
+            GameConstants.log("Start game command received after game over. Resetting and starting countdown.");
+            return;
+        }
+
+        if (gameState.getGameState() == GameConstants.STATE_LOBBY && gameState.getPlayerCount() >= 2) {
+            gameState.startGameCountdown();
+            GameConstants.log("Start game command received from " + clientAddress + ":" + clientPort);
+        } else {
+            sendResponse("ERROR Not ready to start game", clientAddress, clientPort);
+            GameConstants.log("Start game command rejected: Not enough players or wrong state. Current state: " + gameState.getGameState() + ", Players: " + gameState.getPlayerCount());
         }
     }
 

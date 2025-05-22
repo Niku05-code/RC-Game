@@ -12,8 +12,14 @@ public class GameConstants {
     public static final String CMD_WELCOME = "WELCOME";
     public static final String CMD_STATE = "STATE";
     public static final String CMD_FULL = "FULL";
+    public static final String CMD_START_GAME = "START_GAME";
+    public static final int STATE_LOBBY = 0;
+    public static final int STATE_COUNTDOWN = 1;
+    public static final int STATE_IN_GAME = 2;
+    public static final int STATE_GAME_OVER = 3;
 
-
+    public static final int GAME_DURATION_SECONDS = 60;
+    public static final int COUNTDOWN_SECONDS = 3;
 
     public static void log(String message) {
         System.out.println("[GAME] " + message);
