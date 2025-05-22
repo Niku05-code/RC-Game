@@ -82,21 +82,17 @@ public class GamePanel extends JPanel implements KeyListener {
     }
     @Override
     protected void paintComponent(Graphics g) {
-        // Folosim double buffering nativ mai eficient
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
 
-        // Setări de calitate
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-        // Fundal gradient
         GradientPaint bgGradient = new GradientPaint(0, 0, new Color(230, 240, 255),
                 0, getHeight(), new Color(180, 210, 255));
         g2d.setPaint(bgGradient);
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
-        // Grid subtil
         g2d.setColor(new Color(200, 220, 240, 80));
         for (int i = 0; i < getWidth(); i += 40) {
             g2d.drawLine(i, 0, i, getHeight());
@@ -105,7 +101,6 @@ public class GamePanel extends JPanel implements KeyListener {
             g2d.drawLine(0, j, getWidth(), j);
         }
 
-        // Copii sincronizate
         Map<Integer, PlayerData> playersCopy;
         List<Collectible> collectiblesCopy;
 
@@ -117,13 +112,10 @@ public class GamePanel extends JPanel implements KeyListener {
             collectiblesCopy = new ArrayList<>(collectibles);
         }
 
-        // Desenare colectibile
         for (Collectible c : collectiblesCopy) {
-            // Umbra
             g2d.setColor(new Color(0, 0, 0, 60));
             g2d.fillOval(c.x + 2, c.y + 3, 20, 20);
 
-            // Corp
             GradientPaint collectibleGradient = new GradientPaint(
                     c.x, c.y, new Color(255, 200, 0),
                     c.x + 20, c.y + 20, new Color(255, 120, 0)
@@ -131,20 +123,16 @@ public class GamePanel extends JPanel implements KeyListener {
             g2d.setPaint(collectibleGradient);
             g2d.fillOval(c.x, c.y, 20, 20);
 
-            // Highlight
             g2d.setColor(new Color(255, 255, 255, 120));
             g2d.fillOval(c.x + 5, c.y + 5, 8, 8);
         }
 
-        // Desenare jucători
         PlayerData me = playersCopy.get(playerId);
         for (PlayerData p : playersCopy.values()) {
-            // Umbra
             g2d.setColor(new Color(0, 0, 0, 80));
             g2d.fillOval(p.x + 3, p.y + 5,
                     GameConstants.PLAYER_SIZE, GameConstants.PLAYER_SIZE);
 
-            // Corp
             Color baseColor = p.id == playerId ?
                     new Color(70, 130, 255) : new Color(255, 80, 80);
 
@@ -158,13 +146,11 @@ public class GamePanel extends JPanel implements KeyListener {
             g2d.fillOval(p.x, p.y,
                     GameConstants.PLAYER_SIZE, GameConstants.PLAYER_SIZE);
 
-            // Contur
             g2d.setStroke(new BasicStroke(2));
             g2d.setColor(baseColor.darker().darker());
             g2d.drawOval(p.x, p.y,
                     GameConstants.PLAYER_SIZE, GameConstants.PLAYER_SIZE);
 
-            // Nume
             g2d.setColor(Color.WHITE);
             g2d.setFont(new Font("Arial", Font.BOLD, 12));
             String name = p.id == playerId ? "YOU" : "P" + p.id;
@@ -175,7 +161,6 @@ public class GamePanel extends JPanel implements KeyListener {
                     p.y + GameConstants.PLAYER_SIZE/2 + 5);
         }
 
-        // Panou scor
         if (me != null) {
             g2d.setColor(new Color(0, 0, 0, 150));
             g2d.fillRoundRect(5, 5, 120, 30, 10, 10);
