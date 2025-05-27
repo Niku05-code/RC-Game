@@ -8,7 +8,7 @@ import java.awt.event.WindowEvent;
 public class GameClient {
     public static void main(String[] args) throws Exception {
         GameConstants.log("Starting game client...");
-        String serverIp = "127.0.0.1";
+        String serverIp = GameConstants.SERVER_ADRESS;
         int serverPort = GameConstants.SERVER_PORT;
 
         GamePanel panel = new GamePanel();

@@ -16,7 +16,7 @@ public class GameServer {
 
     public void start() {
         try {
-            serverSocket = new DatagramSocket(GameConstants.SERVER_PORT);
+            serverSocket = new DatagramSocket(GameConstants.SERVER_PORT, InetAddress.getByName("0.0.0.0"));
             GameConstants.log("Server started on " + getServerInfo());
             GameConstants.log("Waiting for clients...");
 

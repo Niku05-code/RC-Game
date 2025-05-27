@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["openjdk"]
+
+[start]
+cmd = "java game.server.GameServer"

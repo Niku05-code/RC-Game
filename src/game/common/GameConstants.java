@@ -2,6 +2,7 @@ package game.common;
 
 public class GameConstants {
     public static final int SERVER_PORT = 12345;
+    public static final String SERVER_ADRESS = "161.97.122.183";
     public static final int MAX_PLAYERS = 4;
     public static final int GAME_WIDTH = 800;
     public static final int GAME_HEIGHT = 600;
