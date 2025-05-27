@@ -1,6 +1,10 @@
 [phases.setup]
 nixPkgs = ["openjdk"]
 
-[start]
-cmd = "java -cp . game.server.GameServer"
+[phases.build]
+commands = [
+    "javac src/game/server/GameServer.java src/game/server/*.java src/game/client/*.java src/game/common/*.java src/Main.java"
+]
 
+[start]
+cmd = "java -cp src game.server.GameServer"
