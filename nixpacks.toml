@@ -1,10 +1,11 @@
 [phases.setup]
-nixPkgs = ["openjdk"]
+nixPkgs = ["openjdk17"]
 
 [phases.build]
 commands = [
-    "javac src/game/server/GameServer.java src/game/server/*.java src/game/client/*.java src/game/common/*.java src/Main.java"
+    "find src -name '*.java' > sources.txt",
+    "javac @sources.txt -d out"
 ]
 
 [start]
-cmd = "java -cp src game.server.GameServer"
+cmd = "java -cp out game.server.GameServer"
