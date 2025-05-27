@@ -2,4 +2,5 @@
 nixPkgs = ["openjdk"]
 
 [start]
-cmd = "java game.server.GameServer"
+cmd = "java -cp . game.server.GameServer"
+
